@@ -5,17 +5,17 @@ const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Bonus: basic brute-force protection on login
+// Rate limiter: 5 attempts per 15 minutes (brute-force protection)
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // 10 attempts per IP per window
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many login attempts. Please try again later.' },
+  max: 5, // 5 failed attempts
+  message: { error: 'Too many login attempts, please try again later.' },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 
 router.post('/register', register);
-router.post('/login', loginLimiter, login);
+router.post('/login', loginLimiter, login); // <-- Rate limiter applied to login
 router.get('/me', requireAuth, me);
 
 module.exports = router;
