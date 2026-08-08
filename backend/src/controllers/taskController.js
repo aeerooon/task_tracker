@@ -28,10 +28,23 @@ async function listTasks(req, res, next) {
       where.title = { [Op.like]: `%${search}%` };
     }
 
+    // --- SORTING LOGIC (BONUS) ---
+    const sortBy = req.query.sortBy || 'due_date';
+    const sortOrder = (req.query.sortOrder || 'ASC').toUpperCase();
+    const allowedSortFields = ['due_date', 'status', 'createdAt', 'title'];
+    if (!allowedSortFields.includes(sortBy)) {
+      return res.status(400).json({ error: `sortBy must be one of: ${allowedSortFields.join(', ')}` });
+    }
+    if (!['ASC', 'DESC'].includes(sortOrder)) {
+      return res.status(400).json({ error: 'sortOrder must be ASC or DESC' });
+    }
+    const order = [[sortBy, sortOrder]];
+    // --- END SORTING LOGIC ---
+
     const { rows, count } = await Task.findAndCountAll({
       where,
       include: [{ model: Category, attributes: ['id', 'name'] }],
-      order: [['createdAt', 'DESC']],
+      order,
       limit,
       offset,
     });
